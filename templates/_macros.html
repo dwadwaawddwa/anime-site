@@ -1,0 +1,75 @@
+{# Widget de note rapide : une rangée de boutons 0.5→10, 1 clic = noté. #}
+{% macro rating_widget(entry, steps, csrf) %}
+<div class="rating" data-entry="{{ entry.id }}">
+  <div class="rating-stars" role="group" aria-label="Noter sur 10">
+    {% for i in range(1, 11) %}
+      {% set full = i %}
+      {% set half = i - 0.5 %}
+      <button class="star{% if entry.rating and entry.rating >= half %} on{% endif %}{% if entry.rating and entry.rating >= full %} full{% endif %}"
+              data-val="{{ half }}" title="{{ half }}/10" aria-label="{{ half }} sur 10">
+        <span class="h1" data-val="{{ half }}"></span><span class="h2" data-val="{{ full }}"></span>
+      </button>
+    {% endfor %}
+  </div>
+  <span class="rating-num">{% if entry.rating %}{{ '%g'|format(entry.rating) }}{% else %}—{% endif %}</span>
+  {% if entry.rating %}<button class="clear" data-val="0" title="Retirer la note">✕</button>{% endif %}
+</div>
+{% endmacro %}
+
+{# Carte d'anime (image + titres). `subtitle_en` affiche le titre anglais en discret. #}
+{% macro anime_card(a, my=false) %}
+<a class="card" href="/anime/{{ a.id }}" style="--acc: {{ a.color or '#5865f2' }}">
+  <div class="thumb">
+    {% if a.cover_url %}<img loading="lazy" src="{{ a.cover_url }}" alt="">{% else %}<div class="noimg">?</div>{% endif %}
+    {% if a.average_score %}<span class="score">{{ (a.average_score/10)|round(1) }}</span>{% endif %}
+    {% if my %}<span class="owned">✓</span>{% endif %}
+  </div>
+  <div class="meta">
+    <div class="t-main">{{ a.english or a.romaji or a.native }}</div>
+    {% if a.romaji and a.romaji != (a.english or a.romaji) %}<div class="t-sub">{{ a.romaji }}</div>{% endif %}
+    {% if a.native %}<div class="t-jp">{{ a.native }}</div>{% endif %}
+  </div>
+</a>
+{% endmacro %}
+
+{# Podium du top 3 personnages : même disposition que podium(), image ronde. #}
+{% macro char_podium(top3) %}
+<div class="podium podium-char">
+  {% set slots = [(top3[1] if top3|length > 1 else none, 2),
+                  (top3[0] if top3|length > 0 else none, 1),
+                  (top3[2] if top3|length > 2 else none, 3)] %}
+  {% for c, rank in slots %}
+    {% if c %}
+      <div class="podium-slot p{{ rank }}" title="{{ c.name }}">
+        {% if rank == 1 %}<span class="crown">👑</span>{% endif %}
+        <div class="podium-poster">
+          {% if c.image_url %}<img loading="lazy" src="{{ c.image_url }}" alt="">{% endif %}
+          <span class="podium-rank">{{ rank }}</span>
+        </div>
+        <span class="podium-title">{{ c.name }}</span>
+      </div>
+    {% endif %}
+  {% endfor %}
+</div>
+{% endmacro %}
+
+{# Podium du top 3 : #2 à gauche, #1 au centre (surélevé + couronne), #3 à droite. #}
+{% macro podium(top3) %}
+<div class="podium">
+  {% set slots = [(top3[1] if top3|length > 1 else none, 2),
+                  (top3[0] if top3|length > 0 else none, 1),
+                  (top3[2] if top3|length > 2 else none, 3)] %}
+  {% for a, rank in slots %}
+    {% if a %}
+      <a class="podium-slot p{{ rank }}" href="/anime/{{ a.id }}" title="{{ a.english or a.romaji }}">
+        {% if rank == 1 %}<span class="crown">👑</span>{% endif %}
+        <div class="podium-poster">
+          {% if a.cover_url %}<img loading="lazy" src="{{ a.cover_url }}" alt="">{% endif %}
+          <span class="podium-rank">{{ rank }}</span>
+        </div>
+        <span class="podium-title">{{ a.english or a.romaji }}</span>
+      </a>
+    {% endif %}
+  {% endfor %}
+</div>
+{% endmacro %}

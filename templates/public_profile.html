@@ -1,0 +1,105 @@
+{% extends "base.html" %}
+{% import "_macros.html" as m %}
+{% block title %}{{ prof.global_name or prof.username }} — profil{% endblock %}
+{% block content %}
+<div class="profile-card">
+  <img class="pf-avatar" src="{{ avatar_url(prof) }}" alt="" width="72" height="72">
+  <div>
+    <h1 class="page-h">{{ prof.global_name or prof.username }}</h1>
+    <span class="badge">🌍 Profil public · {{ entries|length }} animes notés</span>
+  </div>
+</div>
+
+{% if top3 %}
+<section>
+  <h2 class="sec-h">Top 3 ⭐</h2>
+  {{ m.podium(top3) }}
+</section>
+{% endif %}
+
+{% if char_top3 %}
+<section>
+  <h2 class="sec-h">Top 3 personnages 🎭</h2>
+  {{ m.char_podium(char_top3) }}
+</section>
+{% endif %}
+
+{% set activity_user = prof.id %}
+{% include "_activity.html" %}
+
+{% set has_tiers = by_tier.values()|map('length')|sum > 0 %}
+{% if has_tiers %}
+<section>
+  <h2 class="sec-h">Tier list 🏆</h2>
+  <div class="tierlist readonly">
+    {% for t in tier_rows %}
+      {% set items = by_tier[t.id] %}
+      {% if items %}
+      <div class="tier">
+        <div class="tier-label" style="--i: {{ loop.index0 }}; --n: {{ tier_rows|length }}">
+          <span class="tl-text">{{ t.label }}</span>
+        </div>
+        <div class="tier-drop">
+          {% for e in items %}
+            <a class="tier-item" href="/anime/{{ e.anime.id }}" title="{{ e.anime.english or e.anime.romaji }}">
+              {% if e.anime.cover_url %}<img loading="lazy" src="{{ e.anime.cover_url }}" alt="">{% endif %}
+              <span class="ti-title">{{ e.anime.english or e.anime.romaji }}</span>
+            </a>
+          {% endfor %}
+        </div>
+      </div>
+      {% endif %}
+    {% endfor %}
+  </div>
+</section>
+{% endif %}
+
+{% set has_char_tiers = char_by_tier.values()|map('length')|sum > 0 %}
+{% if has_char_tiers %}
+<section>
+  <h2 class="sec-h">Tier list personnages 🎭</h2>
+  <div class="tierlist readonly">
+    {% for t in char_tier_rows %}
+      {% set items = char_by_tier[t.id] %}
+      {% if items %}
+      <div class="tier">
+        <div class="tier-label" style="--i: {{ loop.index0 }}; --n: {{ char_tier_rows|length }}">
+          <span class="tl-text">{{ t.label }}</span>
+        </div>
+        <div class="tier-drop">
+          {% for c in items %}
+            <div class="tier-item" title="{{ c.name }}">
+              {% if c.image_url %}<img loading="lazy" src="{{ c.image_url }}" alt="">{% endif %}
+              <span class="ti-title">{{ c.name }}</span>
+            </div>
+          {% endfor %}
+        </div>
+      </div>
+      {% endif %}
+    {% endfor %}
+  </div>
+</section>
+{% endif %}
+
+<section>
+  <h2 class="sec-h">Toutes ses notes</h2>
+  <ol class="ranking">
+    {% for e, a in entries %}
+      <li class="rank-row" style="--acc: {{ a.color or 'var(--acc)' }}">
+        <span class="rank-n">{{ loop.index }}</span>
+        <a class="rank-thumb" href="/anime/{{ a.id }}">{% if a.cover_url %}<img loading="lazy" src="{{ a.cover_url }}" alt="">{% endif %}</a>
+        <div class="rank-meta">
+          <a class="rank-title" href="/anime/{{ a.id }}">{{ a.english or a.romaji }}</a>
+          <div class="t-sub">{{ a.romaji }}</div>
+          {% if e.comment %}<p class="pf-comment">« {{ e.comment }} »</p>{% endif %}
+        </div>
+        <div class="rank-score"><b>{{ '%g'|format(e.rating) }}</b><span>/10</span></div>
+      </li>
+    {% endfor %}
+  </ol>
+</section>
+{% endblock %}
+
+{% block scripts %}
+<script src="/static/heatmap.js?v={{ asset_v }}" defer></script>
+{% endblock %}

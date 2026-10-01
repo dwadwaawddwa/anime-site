@@ -1,0 +1,62 @@
+{# Heatmap d'activité (« écoutes » par jour, façon GitHub).
+   Attend `activity` (cf. build_activity). Optionnel : `activity_user` = id d'un
+   profil public (sinon = soi-même). #}
+<section class="card-box">
+  <div class="hm-head">
+    <h3>Activité 🔥</h3>
+    <div class="hm-stats muted">
+      <span><b>{{ activity.total }}</b> ép. cette année</span>
+      <span><b>{{ activity.active_days }}</b> jours actifs</span>
+      {% if activity.streak %}<span>🔥 série de <b>{{ activity.streak }}</b> j</span>{% endif %}
+    </div>
+  </div>
+
+  <div class="hm-scroll">
+    <div class="hm-grid-wrap" data-user="{{ activity_user or '' }}">
+      {# étiquettes de mois #}
+      <div class="hm-months" style="grid-template-columns: repeat({{ activity.weeks|length }}, 12px);">
+        {% for w in range(activity.weeks|length) %}
+          <span>{{ activity.month_labels.get(w, '') }}</span>
+        {% endfor %}
+      </div>
+      <div class="hm-body">
+        <div class="hm-days">
+          <span></span><span>Lun</span><span></span><span>Mer</span>
+          <span></span><span>Ven</span><span></span>
+        </div>
+        <div class="hm">
+          {% for week in activity.weeks %}
+            {% for cell in week %}
+              {% if cell.future %}
+                <div class="hm-cell hm-empty"></div>
+              {% else %}
+                <div class="hm-cell" data-level="{{ cell.level }}"
+                     data-date="{{ cell.date }}" data-count="{{ cell.count }}"
+                     title="{{ cell.count }} ép. le {{ cell.date }}"
+                     {% if cell.count %}tabindex="0" role="button"{% endif %}></div>
+              {% endif %}
+            {% endfor %}
+          {% endfor %}
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="hm-legend muted">
+    <span>Moins</span>
+    <i class="hm-cell" data-level="0"></i>
+    <i class="hm-cell" data-level="1"></i>
+    <i class="hm-cell" data-level="2"></i>
+    <i class="hm-cell" data-level="3"></i>
+    <i class="hm-cell" data-level="4"></i>
+    <span>Plus</span>
+  </div>
+
+  <div class="hm-detail" hidden>
+    <div class="hm-detail-head">
+      <b class="hm-detail-date"></b>
+      <button type="button" class="link hm-detail-close" aria-label="Fermer">✕</button>
+    </div>
+    <ul class="hm-detail-list"></ul>
+  </div>
+</section>

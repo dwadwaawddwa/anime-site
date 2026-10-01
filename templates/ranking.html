@@ -1,0 +1,47 @@
+{% extends "base.html" %}
+{% block title %}Classement{% endblock %}
+{% block content %}
+<h1 class="page-h">Classement</h1>
+<div class="scopes">
+  <a class="scope {% if scope=='me' %}on{% endif %}" href="/ranking?scope=me{% if genre %}&genre={{ genre }}{% endif %}">🧍 Mes notes</a>
+  <a class="scope {% if scope=='global' %}on{% endif %}" href="/ranking?scope=global{% if genre %}&genre={{ genre }}{% endif %}">🌍 Membres publics</a>
+  <a class="scope {% if scope=='anilist' %}on{% endif %}" href="/ranking?scope=anilist{% if genre %}&genre={{ genre }}{% endif %}">⭐ Kitsu</a>
+</div>
+
+<form class="genre-filter" method="get" action="/ranking">
+  <input type="hidden" name="scope" value="{{ scope }}">
+  <label>Catégorie :
+    <select name="genre" class="js-submit">
+      <option value="">Toutes</option>
+      {% for g in genres %}<option value="{{ g }}" {% if g==genre %}selected{% endif %}>{{ g }}</option>{% endfor %}
+    </select>
+  </label>
+  {% if genre %}<a class="link" href="/ranking?scope={{ scope }}">✕ retirer</a>{% endif %}
+</form>
+
+{% if scope=='me' and not user %}
+  <p class="muted">Connecte-toi pour voir ton classement perso.</p>
+{% elif not rows %}
+  <p class="muted">Aucun anime noté ici pour l'instant.</p>
+{% endif %}
+
+<ol class="ranking">
+  {% for r in rows %}
+    <li class="rank-row" style="--acc: {{ r.anime.color or '#5865f2' }}">
+      <span class="rank-n">{{ loop.index }}</span>
+      <a class="rank-thumb" href="/anime/{{ r.anime.id }}">
+        {% if r.anime.cover_url %}<img loading="lazy" src="{{ r.anime.cover_url }}" alt="">{% endif %}
+      </a>
+      <div class="rank-meta">
+        <a class="rank-title" href="/anime/{{ r.anime.id }}">{{ r.anime.english or r.anime.romaji }}</a>
+        <div class="t-sub">{{ r.anime.romaji }}</div>
+        <div class="rank-genres">{% for g in r.anime.genre_list[:4] %}<span>{{ g }}</span>{% endfor %}</div>
+      </div>
+      <div class="rank-score">
+        <b>{{ '%g'|format(r.score) }}</b><span>/10</span>
+        {% if r.count %}<em>{{ r.count }} vote{{ 's' if r.count>1 else '' }}</em>{% endif %}
+      </div>
+    </li>
+  {% endfor %}
+</ol>
+{% endblock %}

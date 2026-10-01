@@ -1,0 +1,45 @@
+{% extends "base.html" %}
+{% block title %}Recherche : {{ q }}{% endblock %}
+{% block content %}
+<h1 class="page-h">Recherche {% if q %}: <span>{{ q }}</span>{% endif %}</h1>
+{% if error %}<p class="err">{{ error }}</p>{% endif %}
+{% if q and not items and not error %}
+  <p class="muted">Aucun résultat pour « {{ q }} ».</p>
+{% endif %}
+<div class="grid">
+  {% for it in items %}
+    {% set a = it.anime %}
+    <div class="grid-item">
+      <a class="card" href="/anime/{{ a.id }}" style="--acc: {{ a.color or '#5865f2' }}">
+        <div class="thumb">
+          {% if a.cover_url %}<img loading="lazy" src="{{ a.cover_url }}" alt="">{% else %}<div class="noimg">?</div>{% endif %}
+          {% if a.average_score %}<span class="score">{{ (a.average_score/10)|round(1) }}</span>{% endif %}
+          {% if it.seasons > 1 %}<span class="seasons">{{ it.seasons }} saisons</span>{% endif %}
+          {% if a.id in my_ids %}<span class="owned">✓</span>{% endif %}
+        </div>
+        <div class="meta">
+          <div class="t-main">{{ a.english or a.romaji or a.native }}</div>
+          {% if a.romaji and a.romaji != (a.english or a.romaji) %}<div class="t-sub">{{ a.romaji }}</div>{% endif %}
+          {% if a.native %}<div class="t-jp">{{ a.native }}</div>{% endif %}
+        </div>
+      </a>
+      {% if user %}
+      <form class="quick-add" method="post" action="/entry/add">
+        <input type="hidden" name="anime_id" value="{{ a.id }}">
+        <input type="hidden" name="csrf" value="{{ csrf }}">
+        {% if a.id in my_ids %}
+          <span class="added">Dans ta liste ✓</span>
+        {% else %}
+          <button name="status" value="to_watch" class="mini">+ À écouter</button>
+          <button name="status" value="watching" class="mini">▶ En cours</button>
+          <button name="status" value="finished" class="mini solid">✓ Fini</button>
+        {% endif %}
+      </form>
+      {% endif %}
+    </div>
+  {% endfor %}
+</div>
+{% if not user and items %}
+  <p class="muted center">Connecte-toi pour ajouter des animes à ta liste et les noter.</p>
+{% endif %}
+{% endblock %}

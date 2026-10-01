@@ -1,0 +1,46 @@
+{% extends "base.html" %}
+{% block title %}Catalogue{% endblock %}
+{% block content %}
+<div class="page-h-row">
+  <h1 class="page-h">Catalogue <span class="muted" style="font-size:1rem">{{ total }} séries</span></h1>
+  <form class="genre-filter" method="get" action="/catalogue">
+    <label>Catégorie :
+      <select name="genre" class="js-submit">
+        <option value="">Toutes</option>
+        {% for g in genres %}<option value="{{ g }}" {% if g==genre %}selected{% endif %}>{{ g }}</option>{% endfor %}
+      </select>
+    </label>
+    {% if genre %}<a class="link" href="/catalogue">✕ retirer</a>{% endif %}
+  </form>
+</div>
+<p class="muted">Les animes à plusieurs saisons sont regroupés en une seule série. Triés par popularité.</p>
+
+{% if not items %}
+  <p class="muted">Catalogue en cours de remplissage… reviens dans un moment.</p>
+{% endif %}
+
+<div class="grid">
+  {% for it in items %}
+    {% set a = it.anime %}
+    <a class="card" href="/anime/{{ a.id }}" style="--acc: {{ a.color or '#5865f2' }}">
+      <div class="thumb">
+        {% if a.cover_url %}<img loading="lazy" src="{{ a.cover_url }}" alt="">{% else %}<div class="noimg">?</div>{% endif %}
+        {% if a.average_score %}<span class="score">{{ (a.average_score/10)|round(1) }}</span>{% endif %}
+        {% if it.seasons > 1 %}<span class="seasons">{{ it.seasons }} saisons</span>{% endif %}
+      </div>
+      <div class="meta">
+        <div class="t-main">{{ a.english or a.romaji or a.native }}</div>
+        {% if a.romaji and a.romaji != (a.english or a.romaji) %}<div class="t-sub">{{ a.romaji }}</div>{% endif %}
+      </div>
+    </a>
+  {% endfor %}
+</div>
+
+{% if pages > 1 %}
+<nav class="pager">
+  {% if page > 1 %}<a class="btn small" href="/catalogue?page={{ page-1 }}{% if genre %}&genre={{ genre }}{% endif %}">← Précédent</a>{% endif %}
+  <span class="pageinfo">Page {{ page }} / {{ pages }}</span>
+  {% if page < pages %}<a class="btn small" href="/catalogue?page={{ page+1 }}{% if genre %}&genre={{ genre }}{% endif %}">Suivant →</a>{% endif %}
+</nav>
+{% endif %}
+{% endblock %}

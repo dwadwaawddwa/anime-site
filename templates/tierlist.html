@@ -1,0 +1,149 @@
+{% extends "base.html" %}
+{% block title %}{{ board.name }}{% endblock %}
+{% block content %}
+{% set is_char = (kind == "character") %}
+
+<div class="mode-toggle">
+  <a class="mode {% if not is_char %}active{% endif %}" href="/tierlist">🎬 Animes</a>
+  <a class="mode {% if is_char %}active{% endif %}" href="/tierlist?kind=character">🎭 Personnages</a>
+</div>
+
+<div class="board-tabs">
+  {% for b in boards %}
+    <a class="board-tab {% if b.id == board.id %}active{% endif %}" href="/tierlist?board={{ b.id }}">
+      {% if b.is_default %}⭐ {% endif %}{{ b.name }}
+    </a>
+  {% endfor %}
+  <button id="newBoardBtn" class="board-tab new" type="button">＋ Nouvelle</button>
+  <form id="newBoardForm" method="post" action="{{ '/charboard/new' if is_char else '/board/new' }}" class="inline newboard" hidden>
+    <input type="hidden" name="csrf" value="{{ csrf }}">
+    <input type="text" name="name" placeholder="Nom de la tier list" maxlength="60" required>
+    <button class="mini solid" type="submit">Créer</button>
+  </form>
+</div>
+
+<div class="page-h-row">
+  <h1 class="page-h">{{ board.name }}</h1>
+  <div class="tier-toolbar">
+    <button id="editToggle" class="btn small" type="button">✎ Éditer</button>
+    <button id="exportPng" class="btn small" type="button">🖼️ Export PNG</button>
+    <button id="shareBtn" class="btn small" type="button"
+            data-url="/u/{{ prof.id }}" data-public="{{ 1 if prof.is_public else 0 }}">🔗 Partager</button>
+    <form method="post" action="/tier/add" class="inline addtier" hidden>
+      <input type="hidden" name="csrf" value="{{ csrf }}">
+      <input type="hidden" name="board_id" value="{{ board.id }}">
+      {% if not is_char %}
+        <input type="number" name="value" step="0.5" min="0.5" max="10" placeholder="9.5" style="width:5em">
+        <button class="mini" type="submit">+ Palier note</button>
+      {% endif %}
+      <input type="text" name="label" placeholder="S/A/B…" maxlength="24" style="width:6em">
+      <button class="mini" type="submit">+ Palier</button>
+    </form>
+  </div>
+</div>
+
+{% if is_char %}
+  {% if board.is_default %}
+    <p class="muted">Ta liste de personnages de base : ajoute des persos puis glisse-les dans les paliers.</p>
+  {% endif %}
+  <div class="char-add card-box" data-board="{{ board.id }}">
+    <strong>Ajouter un personnage</strong>
+    <div class="char-search">
+      <input type="search" id="charAddInput" placeholder="Chercher un personnage (ex. Gojo)…"
+             maxlength="100" autocomplete="off">
+      <button type="button" class="mini" id="charAddBtn">🔎 Chercher</button>
+    </div>
+    {% if mylist %}
+    <div class="char-browse">
+      <span class="muted small">ou parcours un de tes animes :</span>
+      <select id="animePicker" class="anime-picker">
+        <option value="">— choisir un anime de ma liste —</option>
+        {% for a in mylist %}
+          <option value="{{ a.id }}">{{ a.title }}</option>
+        {% endfor %}
+      </select>
+      <button type="button" class="mini" id="animePrev" title="Anime précédent">◀ Préc.</button>
+      <button type="button" class="mini" id="animeNext" title="Anime suivant">Suiv. ▶</button>
+    </div>
+    {% endif %}
+    <div id="charAddResults" class="char-results" aria-live="polite"></div>
+  </div>
+{% elif board.is_default %}
+  <p class="muted">Ta liste de base : les animes finis se placent automatiquement selon leur note.
+     Glisse-les d'un palier à l'autre — déposer dans un palier chiffré met la note à jour.</p>
+{% endif %}
+
+{% if not board.is_default %}
+  <div class="board-actions">
+    <form method="post" action="/board/rename" class="inline">
+      <input type="hidden" name="csrf" value="{{ csrf }}">
+      <input type="hidden" name="board_id" value="{{ board.id }}">
+      <input type="text" name="name" value="{{ board.name }}" maxlength="60" style="width:12em">
+      <button class="mini" type="submit">Renommer</button>
+    </form>
+    <form method="post" action="/board/reset" class="inline"
+          data-confirm="Tout remettre dans « À classer » sur cette liste ?">
+      <input type="hidden" name="csrf" value="{{ csrf }}">
+      <input type="hidden" name="board_id" value="{{ board.id }}">
+      <button class="mini" type="submit">↩ Tout mettre à classer</button>
+    </form>
+    <form method="post" action="/board/remove" class="inline"
+          data-confirm="Supprimer définitivement cette tier list ?">
+      <input type="hidden" name="csrf" value="{{ csrf }}">
+      <input type="hidden" name="board_id" value="{{ board.id }}">
+      <button class="mini danger" type="submit">🗑 Supprimer cette liste</button>
+    </form>
+  </div>
+  {% if not is_char %}
+  <p class="muted">Liste personnalisée : glisse librement tes animes. Ça n'affecte pas tes notes.</p>
+  {% endif %}
+{% endif %}
+
+{% macro tier_item(it, is_char) %}
+  {% if is_char %}
+    <div class="tier-item" draggable="true" data-char="{{ it.id }}" title="{{ it.name }}">
+      {% if it.image_url %}<img src="{{ it.image_url }}" alt="">{% endif %}
+      <span class="ti-title">{{ it.name }}</span>
+      <button type="button" class="ti-del js-char-del" data-char="{{ it.id }}" title="Retirer de la liste">✕</button>
+    </div>
+  {% else %}
+    <div class="tier-item" draggable="true" data-entry="{{ it.id }}" title="{{ it.anime.english or it.anime.romaji }}">
+      {% if it.anime.cover_url %}<img src="{{ it.anime.cover_url }}" alt="">{% endif %}
+      <span class="ti-title">{{ it.anime.english or it.anime.romaji }}</span>
+    </div>
+  {% endif %}
+{% endmacro %}
+
+<div id="tierlist" class="tierlist" data-board="{{ board.id }}" data-kind="{{ kind }}">
+  {% for t in tier_rows %}
+    {% set items = by_tier[t.id] %}
+    <div class="tier {% if not items and t.value is not none %}empty{% endif %}" data-tier="{{ t.id }}">
+      <div class="tier-label" style="--i: {{ loop.index0 }}; --n: {{ tier_rows|length }}">
+        <span class="tl-text">{{ t.label }}</span>
+        <form method="post" action="/tier/rename" class="rename" hidden>
+          <input type="hidden" name="tier_id" value="{{ t.id }}">
+          <input type="hidden" name="csrf" value="{{ csrf }}">
+          <input type="text" name="label" value="{{ t.label }}" maxlength="24">
+          <button class="mini" type="submit">OK</button>
+        </form>
+        <form method="post" action="/tier/remove" class="delrow" hidden data-confirm="Supprimer ce palier ? Les éléments redeviennent non classés.">
+          <input type="hidden" name="tier_id" value="{{ t.id }}">
+          <input type="hidden" name="csrf" value="{{ csrf }}">
+          <button class="mini danger" type="submit">✕</button>
+        </form>
+      </div>
+      <div class="tier-drop" data-tier="{{ t.id }}">
+        {% for it in items %}{{ tier_item(it, is_char) }}{% endfor %}
+      </div>
+    </div>
+  {% endfor %}
+
+  <div class="tier unranked" data-tier="unranked">
+    <div class="tier-label plain"><span class="tl-text">À classer</span></div>
+    <div class="tier-drop" data-tier="unranked">
+      {% for it in unranked %}{{ tier_item(it, is_char) }}{% endfor %}
+    </div>
+  </div>
+</div>
+{% endblock %}
+{% block scripts %}<script src="/static/tierlist.js?v={{ asset_v }}" defer></script>{% endblock %}

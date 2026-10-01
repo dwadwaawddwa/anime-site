@@ -1,0 +1,60 @@
+{% extends "base.html" %}
+{% import "_macros.html" as m %}
+{% block title %}Ma liste{% endblock %}
+{% block content %}
+<h1 class="page-h">Ma liste</h1>
+<div class="tabs">
+  {% for s in statuses %}
+    <a href="#{{ s }}" class="tab">{{ status_labels[s] }} <b>{{ grouped[s]|length }}</b></a>
+  {% endfor %}
+</div>
+
+{% for s in statuses %}
+<section id="{{ s }}" class="status-block">
+  <h2>{{ status_labels[s] }} <span class="count">{{ grouped[s]|length }}</span></h2>
+  {% if not grouped[s] %}
+    <p class="muted">Rien ici. <a href="/">Cherche un anime</a> pour l'ajouter.</p>
+  {% endif %}
+  <ul class="entries">
+    {% for e in grouped[s] %}
+      <li class="entry" style="--acc: {{ e.anime.color or '#5865f2' }}">
+        <a class="entry-thumb" href="/anime/{{ e.anime.id }}">
+          {% if e.anime.cover_url %}<img loading="lazy" src="{{ e.anime.cover_url }}" alt="">{% endif %}
+        </a>
+        <div class="entry-body">
+          <a class="entry-title" href="/anime/{{ e.anime.id }}">{{ e.anime.english or e.anime.romaji }}</a>
+          {% if e.anime.romaji and e.anime.romaji != e.anime.english %}<div class="t-sub">{{ e.anime.romaji }}</div>{% endif %}
+
+          {{ m.rating_widget(e, rating_steps, csrf) }}
+
+          <div class="entry-actions">
+            <form method="post" action="/entry/status" class="inline">
+              <input type="hidden" name="entry_id" value="{{ e.id }}">
+              <input type="hidden" name="csrf" value="{{ csrf }}">
+              <select name="status" class="js-submit" aria-label="Statut">
+                {% for st in statuses %}
+                  <option value="{{ st }}" {% if st == e.status %}selected{% endif %}>{{ status_labels[st] }}</option>
+                {% endfor %}
+              </select>
+            </form>
+            <button class="link toggle-comment" type="button" data-target="c{{ e.id }}">💬 {% if e.comment %}Commentaire{% else %}Ajouter un mot{% endif %}</button>
+            <form method="post" action="/entry/remove" class="inline" data-confirm="Retirer cet anime de ta liste ?">
+              <input type="hidden" name="entry_id" value="{{ e.id }}">
+              <input type="hidden" name="csrf" value="{{ csrf }}">
+              <button class="link danger" type="submit">🗑 Retirer</button>
+            </form>
+          </div>
+
+          <form method="post" action="/entry/comment" class="comment-form" id="c{{ e.id }}" {% if not e.comment %}hidden{% endif %}>
+            <input type="hidden" name="entry_id" value="{{ e.id }}">
+            <input type="hidden" name="csrf" value="{{ csrf }}">
+            <textarea name="comment" rows="2" maxlength="2000" placeholder="Ton avis…">{{ e.comment }}</textarea>
+            <button type="submit" class="mini">Enregistrer</button>
+          </form>
+        </div>
+      </li>
+    {% endfor %}
+  </ul>
+</section>
+{% endfor %}
+{% endblock %}

@@ -1,0 +1,15 @@
+{% extends "base.html" %}
+{% block title %}Membres publics{% endblock %}
+{% block content %}
+<h1 class="page-h">Membres publics</h1>
+{% if not rows %}<p class="muted">Aucun membre public pour l'instant.</p>{% endif %}
+<div class="users-grid">
+  {% for u, n in rows %}
+    <a class="user-card" href="/u/{{ u.id }}">
+      <img src="{{ avatar_url(u) }}" alt="" width="48" height="48">
+      <b>{{ u.global_name or u.username }}</b>
+      <span class="muted">{{ n }} animes</span>
+    </a>
+  {% endfor %}
+</div>
+{% endblock %}
