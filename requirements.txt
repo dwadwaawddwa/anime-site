@@ -1,0 +1,10 @@
+fastapi
+uvicorn[standard]
+jinja2
+sqlalchemy
+httpx
+itsdangerous
+python-multipart
+python-dotenv
+Pillow
+argon2-cffi

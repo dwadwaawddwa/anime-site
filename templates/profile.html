@@ -1,0 +1,227 @@
+{% extends "base.html" %}
+{% import "_macros.html" as m %}
+{% block title %}Mon profil{% endblock %}
+{% block content %}
+<h1 class="page-h">Mon profil</h1>
+<div class="profile-card">
+  <img class="pf-avatar" src="{{ avatar_url(user) }}" alt="" width="72" height="72">
+  <div>
+    <h2>{{ user.global_name or user.username }}</h2>
+    <div class="pf-stats">
+      {% for s in statuses %}<span>{{ status_labels[s] }} : <b>{{ counts[s] }}</b></span>{% endfor %}
+      <span>Notés : <b>{{ rated }}</b></span>
+    </div>
+  </div>
+</div>
+
+{% include "_activity.html" %}
+
+<section class="card-box">
+  <h3>Ajouter une écoute à la main ✍️</h3>
+  <p class="muted">Si l'extension a raté un épisode (ou pour un autre lecteur), ajoute-le
+     ici. Ça remplit la heatmap ci-dessus.</p>
+  <form method="post" action="/watch/manual" class="watch-manual">
+    <input type="hidden" name="csrf" value="{{ csrf }}">
+    <label>Anime
+      <select name="anime_id">
+        <option value="">— choisir dans ma liste —</option>
+        {% for a in mylist %}
+          <option value="{{ a.id }}">{{ a.title }}</option>
+        {% endfor %}
+      </select>
+    </label>
+    <label>ou titre libre
+      <input type="text" name="title" maxlength="200" placeholder="ex. Frieren">
+    </label>
+    <label>Nb d'ép.
+      <input type="number" name="count" value="1" min="1" max="50" style="width:5rem">
+    </label>
+    <label>Date
+      <input type="date" name="day" value="{{ today }}" max="{{ today }}">
+    </label>
+    <button type="submit" class="mini solid">Ajouter</button>
+  </form>
+</section>
+
+<section class="card-box">
+  <h3>Mon top 3 ⭐</h3>
+  {% if top3 %}
+    {{ m.podium(top3) }}
+  {% else %}
+    <p class="muted">Choisis tes 3 animes préférés ci-dessous — ils s'afficheront en podium sur ton profil.</p>
+  {% endif %}
+  <form method="post" action="/profile/top" class="top3-form">
+    <input type="hidden" name="csrf" value="{{ csrf }}">
+    {% for slot in [1, 2, 3] %}
+      {% set cur = (prof.top1_id, prof.top2_id, prof.top3_id)[slot-1] %}
+      <label>#{{ slot }}
+        <select name="top{{ slot }}">
+          <option value="">—</option>
+          {% for aid, title in finished %}
+            <option value="{{ aid }}" {% if aid == cur %}selected{% endif %}>{{ title }}</option>
+          {% endfor %}
+        </select>
+      </label>
+    {% endfor %}
+    <button type="submit" class="mini solid">Enregistrer</button>
+  </form>
+  {% if not finished %}<p class="muted">Ajoute des animes en « Fini » pour pouvoir choisir ton top 3.</p>{% endif %}
+</section>
+
+<section class="card-box">
+  <h3>Mon top 3 personnages 🎭</h3>
+  {% if char_top3 %}
+    {{ m.char_podium(char_top3) }}
+  {% else %}
+    <p class="muted">Choisis tes 3 personnages préférés (tous animes confondus) — ils s'afficheront en podium sur ton profil.</p>
+  {% endif %}
+  <form method="post" action="/profile/char-top" id="charTopForm">
+    <input type="hidden" name="csrf" value="{{ csrf }}">
+    <div class="char-slots">
+      {% for slot in [1, 2, 3] %}
+        {% set cur = char_top3[slot-1] if char_top3|length >= slot else none %}
+        <div class="char-slot" data-slot="{{ slot }}">
+          <input type="hidden" name="char{{ slot }}" value="{{ cur.id if cur else '' }}">
+          <div class="char-slot-view">
+            {% if cur and cur.image_url %}<img src="{{ cur.image_url }}" alt="">{% endif %}
+            <span class="cs-name">{% if cur %}{{ cur.name }}{% else %}#{{ slot }} — vide{% endif %}</span>
+          </div>
+          <button type="button" class="mini js-char-clear" data-slot="{{ slot }}" {% if not cur %}hidden{% endif %}>✕</button>
+        </div>
+      {% endfor %}
+    </div>
+    <div class="char-search">
+      <input type="search" id="charSearchInput" placeholder="Chercher un personnage (ex. Lelouch)…"
+             maxlength="100" autocomplete="off">
+      <button type="button" class="mini" id="charSearchBtn">🔎 Chercher</button>
+    </div>
+    {% if mylist %}
+    <div class="char-browse">
+      <span class="muted small">ou parcours un de tes animes :</span>
+      <select id="charAnimePicker" class="anime-picker">
+        <option value="">— choisir un anime de ma liste —</option>
+        {% for a in mylist %}
+          <option value="{{ a.id }}">{{ a.title }}</option>
+        {% endfor %}
+      </select>
+      <button type="button" class="mini" id="charAnimePrev" title="Anime précédent">◀ Préc.</button>
+      <button type="button" class="mini" id="charAnimeNext" title="Anime suivant">Suiv. ▶</button>
+    </div>
+    {% endif %}
+    <div id="charResults" class="char-results" aria-live="polite"></div>
+    <button type="submit" class="mini solid">Enregistrer mon top 3</button>
+  </form>
+  <p class="muted small">Cherche un personnage puis clique dessus : il se place dans le
+     premier emplacement libre.</p>
+</section>
+
+<section class="card-box">
+  <h3>Photo de profil</h3>
+  <p class="muted">Par défaut on utilise {% if is_local %}l'avatar du site{% else %}ton avatar Discord{% endif %}. Tu peux mettre ta propre photo
+     (JPG / PNG / WebP, 6 Mo max) — elle est recadrée en carré automatiquement.</p>
+  <div class="avatar-edit">
+    <img class="pf-avatar" src="{{ avatar_url(prof) }}" alt="" width="72" height="72">
+    <form method="post" action="/profile/avatar" enctype="multipart/form-data" class="inline">
+      <input type="hidden" name="csrf" value="{{ csrf }}">
+      <input type="file" name="photo" accept="image/png,image/jpeg,image/webp" required>
+      <button type="submit" class="mini solid">Mettre à jour</button>
+    </form>
+    {% if prof.custom_avatar %}
+      <form method="post" action="/profile/avatar/remove" class="inline">
+        <input type="hidden" name="csrf" value="{{ csrf }}">
+        <button type="submit" class="link danger">{% if is_local %}Retirer ma photo{% else %}Revenir à l'avatar Discord{% endif %}</button>
+      </form>
+    {% endif %}
+  </div>
+</section>
+
+<section class="card-box">
+  <h3>Exporter mes notes ⬇️</h3>
+  <p class="muted">Télécharge la liste de tes animes notés (nom + note), triée de la
+     meilleure à la moins bonne note. Le CSV s'ouvre dans Excel / Google Sheets ;
+     le texte est une liste toute simple.</p>
+  <div class="export-actions">
+    <a class="btn solid" href="/profile/export?fmt=csv" download>Export CSV</a>
+    <a class="btn" href="/profile/export?fmt=txt" download>Export texte</a>
+  </div>
+</section>
+
+{% if is_local %}
+<section class="card-box" id="password">
+  <h3>Mot de passe 🔑</h3>
+  <p class="muted">Tu te connectes avec le pseudo <b>{{ prof.username }}</b>. Changer le mot de
+     passe déconnecte toutes tes autres sessions (autres appareils).</p>
+  {% if pw_flash %}
+    <p class="{{ 'ok-msg' if pw_flash.ok else 'err' }}" role="status">{{ pw_flash.msg }}</p>
+  {% endif %}
+  <form method="post" action="/profile/password" class="auth-form pw-form">
+    <input type="hidden" name="csrf" value="{{ csrf }}">
+    <input type="text" name="username" value="{{ prof.username }}" autocomplete="username"
+           hidden readonly>
+    <label>Mot de passe actuel
+      <input type="password" name="current" required maxlength="128" autocomplete="current-password">
+    </label>
+    <label>Nouveau mot de passe
+      <input type="password" name="new" required minlength="8" maxlength="128" autocomplete="new-password">
+    </label>
+    <label>Confirme le nouveau
+      <input type="password" name="new2" required minlength="8" maxlength="128" autocomplete="new-password">
+    </label>
+    <button type="submit" class="mini solid">Changer le mot de passe</button>
+  </form>
+</section>
+{% endif %}
+
+<section class="card-box">
+  <h3>Visibilité</h3>
+  <p class="muted">Si ton profil est <b>public</b>, tes notes comptent dans le classement « Membres publics »
+     et ta liste notée est visible sur ta page publique. En <b>privé</b>, personne ne voit tes notes.</p>
+  <form method="post" action="/profile/public" class="toggle-form">
+    <input type="hidden" name="csrf" value="{{ csrf }}">
+    <label class="switch">
+      <input type="checkbox" name="is_public" value="1" {% if prof.is_public %}checked{% endif %} class="js-submit">
+      <span class="slider"></span>
+    </label>
+    <span>{% if prof.is_public %}Public 🌍{% else %}Privé 🔒{% endif %}</span>
+  </form>
+  {% if prof.is_public %}
+    <p class="muted">Ta page publique : <a href="/u/{{ user.id }}">/u/{{ user.id }}</a></p>
+  {% endif %}
+</section>
+
+<section class="card-box">
+  <h3>Extension navigateur 🧩</h3>
+  <p class="muted">L'extension détecte les épisodes que tu regardes sur
+     <b>anime-sama</b> et <b>Crunchyroll</b> et les envoie ici automatiquement (heatmap
+     ci-dessus). Colle le jeton ci-dessous dans l'extension.</p>
+  {% if prof.api_token %}
+    <div class="token-row">
+      <input type="text" class="token-field" value="{{ prof.api_token }}" readonly
+             aria-label="Jeton d'API">
+      <button type="button" class="mini js-copy-token">Copier</button>
+    </div>
+    <p class="muted small">⚠️ Ce jeton est secret : il donne accès à l'écriture de ton
+       activité. Ne le partage pas. Tu peux le régénérer (l'ancien cessera de marcher).</p>
+    <div class="token-actions">
+      <form method="post" action="/profile/token" class="inline">
+        <input type="hidden" name="csrf" value="{{ csrf }}">
+        <button type="submit" class="mini">Régénérer</button>
+      </form>
+      <form method="post" action="/profile/token/revoke" class="inline">
+        <input type="hidden" name="csrf" value="{{ csrf }}">
+        <button type="submit" class="link danger">Révoquer</button>
+      </form>
+    </div>
+  {% else %}
+    <form method="post" action="/profile/token">
+      <input type="hidden" name="csrf" value="{{ csrf }}">
+      <button type="submit" class="btn solid">Générer mon jeton</button>
+    </form>
+  {% endif %}
+</section>
+{% endblock %}
+
+{% block scripts %}
+<script src="/static/heatmap.js?v={{ asset_v }}" defer></script>
+<script src="/static/profile-chars.js?v={{ asset_v }}" defer></script>
+{% endblock %}
