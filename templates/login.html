@@ -1,0 +1,28 @@
+{% extends "base.html" %}
+{% block title %}Connexion — DWAnime{% endblock %}
+{% block content %}
+<section class="auth-box">
+  <h1 class="page-h">Connexion</h1>
+  {% if error %}<p class="err" role="alert">{{ error }}</p>{% endif %}
+
+  <form method="post" action="/login" class="auth-form">
+    <input type="hidden" name="csrf" value="{{ csrf }}">
+    <label>Pseudo
+      <input type="text" name="pseudo" value="{{ pseudo|default('') }}" required
+             maxlength="20" autocomplete="username" autocapitalize="none"
+             spellcheck="false" {% if not pseudo %}autofocus{% endif %}>
+    </label>
+    <label>Mot de passe
+      <input type="password" name="password" required maxlength="128"
+             autocomplete="current-password" {% if pseudo %}autofocus{% endif %}>
+    </label>
+    <button type="submit" class="btn solid">Se connecter</button>
+  </form>
+  <p class="muted auth-alt">Pas encore de compte ? <a href="/register">Crée-en un</a> — juste un pseudo et un mot de passe.</p>
+
+  {% if discord_ok %}
+    <div class="auth-sep"><span>ou</span></div>
+    <a class="btn-discord big auth-discord" href="/auth/login">Se connecter avec Discord</a>
+  {% endif %}
+</section>
+{% endblock %}

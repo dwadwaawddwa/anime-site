@@ -1,0 +1,32 @@
+{% extends "base.html" %}
+{% block title %}DWAnime — note tes animes{% endblock %}
+{% block content %}
+<section class="hero">
+  <h1>Note, classe et partage tes <span>animes</span>.</h1>
+  <p>Recherche en français, anglais ou japonais. Fais ta liste, mets des notes en un clic,
+     construis ta tier list, compare avec les potes.</p>
+  <form class="search big" action="/search" method="get">
+    <input type="search" name="q" placeholder="Ex : L'Attaque des Titans, Shingeki no Kyojin, 進撃の巨人…" autofocus maxlength="100">
+    <button type="submit">Rechercher</button>
+  </form>
+  {% if not user %}
+    <div class="cta-row">
+      <a class="btn-discord big" href="/login">Se connecter</a>
+      <a class="btn big-alt" href="/register">Créer un compte</a>
+    </div>
+  {% else %}
+    <div class="cta-row">
+      <a class="btn" href="/list">Ma liste</a>
+      <a class="btn" href="/tierlist">Ma tier list</a>
+      <a class="btn" href="/ranking">Classements</a>
+    </div>
+  {% endif %}
+</section>
+
+<section class="features">
+  <div class="feat"><b>🔎 Recherche multilingue</b><p>Un même anime trouvé que tu tapes son nom FR, EN ou romaji.</p></div>
+  <div class="feat"><b>⭐ Notes en 1 clic</b><p>De 0,5 à 10 par demi-points, direct depuis ta liste.</p></div>
+  <div class="feat"><b>🏆 Tier list drag & drop</b><p>Paliers 10→1 (ou S/A/B/C/D), glisse tes animes finis.</p></div>
+  <div class="feat"><b>🌍 Classements</b><p>Tes notes, la moyenne des membres publics, et la note Kitsu.</p></div>
+</section>
+{% endblock %}

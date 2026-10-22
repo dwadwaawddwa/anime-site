@@ -1,0 +1,55 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="csrf-token" content="{{ csrf }}">
+  <title>{% block title %}DWAnime{% endblock %}</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Unbounded:wght@800&family=Zen+Kaku+Gothic+New:wght@300;400;500;700;900&family=Shippori+Mincho:wght@400;600;800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/static/style.css?v={{ asset_v }}">
+  <link rel="icon" href="/static/favicon.svg">
+</head>
+<body>
+<div id="stars" aria-hidden="true"></div>
+<div id="stars2" aria-hidden="true"></div>
+<header class="topbar">
+  <a class="brand" href="/" aria-label="DWAnime"><span class="dwa">DWA</span><span class="word">nime</span></a>
+  <form class="search" action="/search" method="get" role="search">
+    <input type="search" name="q" placeholder="Rechercher un anime (FR / EN / 日本語)…"
+           value="{{ q|default('') }}" autocomplete="off" maxlength="100">
+    <button type="submit">🔎</button>
+  </form>
+  <nav class="mainnav">
+    {% if user %}
+      <a href="/catalogue">Catalogue</a>
+      <a href="/list">Ma liste</a>
+      <a href="/tierlist">Tier list</a>
+      {% if music_url %}<a href="{{ music_url }}" title="DWAnisongs : les openings, endings et OST de ta liste">🎵 Musiques</a>{% endif %}
+      {% if blindtest_url %}<a href="{{ blindtest_url }}" title="DWAblindtest : blind test sur les musiques de ta liste, seul ou à plusieurs">🎧 Blind test</a>{% endif %}
+      <a href="/ranking">Classement</a>
+      <a href="/users">Membres</a>
+      <a class="me" href="/profile"><img src="{{ avatar_url(user) }}" alt="" width="26" height="26"> {{ user.global_name or user.username }}</a>
+      <a class="ghost" href="/logout">Déconnexion</a>
+    {% else %}
+      <a href="/catalogue">Catalogue</a>
+      <a href="/ranking">Classement</a>
+      <a href="/users">Membres</a>
+      <a href="/register">Créer un compte</a>
+      <a class="btn-discord" href="/login">Connexion</a>
+    {% endif %}
+  </nav>
+</header>
+
+<main class="wrap">
+  {% block content %}{% endblock %}
+</main>
+
+<footer class="foot">
+  <span>anime.dwa.gold — données <a href="https://kitsu.io" rel="noopener noreferrer" target="_blank">Kitsu</a></span>
+</footer>
+<script src="/static/app.js?v={{ asset_v }}" defer></script>
+{% block scripts %}{% endblock %}
+</body>
+</html>

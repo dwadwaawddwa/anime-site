@@ -1,0 +1,36 @@
+{% extends "base.html" %}
+{% block title %}Créer un compte — DWAnime{% endblock %}
+{% block content %}
+<section class="auth-box">
+  <h1 class="page-h">Créer un compte</h1>
+  <p class="muted">Pas d'e-mail : choisis un pseudo et un mot de passe, c'est tout.</p>
+  {% if error %}<p class="err" role="alert">{{ error }}</p>{% endif %}
+
+  <form method="post" action="/register" class="auth-form">
+    <input type="hidden" name="csrf" value="{{ csrf }}">
+    <label>Pseudo
+      <input type="text" name="pseudo" value="{{ pseudo|default('') }}" required
+             minlength="3" maxlength="20" pattern="[A-Za-z0-9_.\-]{3,20}"
+             autocomplete="username" autocapitalize="none" spellcheck="false" autofocus>
+      <small class="muted">3 à 20 caractères : lettres, chiffres, « _ », « . », « - ».</small>
+    </label>
+    <label>Mot de passe
+      <input type="password" name="password" required minlength="8" maxlength="128"
+             autocomplete="new-password">
+      <small class="muted">8 caractères minimum. Une phrase de passe, c'est encore mieux.</small>
+    </label>
+    <label>Confirme le mot de passe
+      <input type="password" name="password2" required minlength="8" maxlength="128"
+             autocomplete="new-password">
+    </label>
+    {# pot de miel anti-robots : invisible pour les humains, laissé vide #}
+    <div class="hp" aria-hidden="true">
+      <label>Site web <input type="text" name="website" tabindex="-1" autocomplete="off"></label>
+    </div>
+    <button type="submit" class="btn solid">Créer mon compte</button>
+  </form>
+  <p class="muted small">⚠️ Sans e-mail, pas de récupération automatique : note bien ton
+     mot de passe (un gestionnaire de mots de passe fait ça très bien).</p>
+  <p class="muted auth-alt">Déjà un compte ? <a href="/login">Connecte-toi</a></p>
+</section>
+{% endblock %}
