@@ -1,0 +1,20 @@
+# --- ajouté avant mise sur GitHub ---
+.env
+.env.*
+!.env.example
+venv/
+.venv/
+node_modules/
+__pycache__/
+*.pyc
+.pytest_cache/
+*.log
+*.db
+*.db-shm
+*.db-wal
+*.sqlite
+*.sqlite3
+.claude/
+Thumbs.db
+uploads/
+server.log
